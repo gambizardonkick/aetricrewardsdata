@@ -114,17 +114,29 @@ function getPeriodBounds(date) {
   const msPerDay = 24 * 60 * 60 * 1000;
   const msPerPeriod = LEADERBOARD_PERIOD_DAYS * msPerDay;
 
+  if (date < ANCHOR_START) {
+    // If now is before anchor start, 
+    // current period is anchor start → anchor start + 7 days
+    // previous period is 7 days before anchor start → anchor start
+    const currentPeriodStart = ANCHOR_START;
+    const currentPeriodEnd = new Date(currentPeriodStart.getTime() + msPerPeriod);
+    const prevPeriodEnd = currentPeriodStart;
+    const prevPeriodStart = new Date(prevPeriodEnd.getTime() - msPerPeriod);
+    return { prevPeriodStart, prevPeriodEnd, currentPeriodStart, currentPeriodEnd };
+  }
+
+  // Normal calculation for now >= anchor start
   const diff = date - ANCHOR_START;
   const periodsPassed = Math.floor(diff / msPerPeriod);
 
   const currentPeriodStart = new Date(ANCHOR_START.getTime() + periodsPassed * msPerPeriod);
   const currentPeriodEnd = new Date(currentPeriodStart.getTime() + msPerPeriod);
-
   const prevPeriodEnd = currentPeriodStart;
   const prevPeriodStart = new Date(prevPeriodEnd.getTime() - msPerPeriod);
 
   return { prevPeriodStart, prevPeriodEnd, currentPeriodStart, currentPeriodEnd };
 }
+
 
 function getRaw365Url(start, end) {
   const apiKey = 'd4e0ecf6-1261-416d-aa98-0bfbc3c5370e';
