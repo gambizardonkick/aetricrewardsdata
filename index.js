@@ -107,80 +107,96 @@ app.get('/api/countdown/rainbet', (req, res) => {
 });
 
 // === RAW365 constants ===
-const RAW365_API_KEY = 'd4e0ecf6-1261-416d-aa98-0bfbc3c5370e';
-const RAW365_CURRENT_START = new Date('2025-10-28T00:00:00.000Z');
-const RAW365_CURRENT_END = new Date('2025-11-04T00:00:00.000Z');
-const RAW365_PREV_START = new Date('2025-10-21T00:00:00.000Z');
-const RAW365_PREV_END = new Date('2025-10-28T00:00:00.000Z');
+const LEADERBOARD_PERIOD_DAYS = 7;
+// Anchor start date (your start point)
+const ANCHOR_START = new Date('2025-10-21T00:00:00.000Z');
 
-function getRaw365Url(start, end) {
-  return `https://api.raw365.gg/v2/affiliate-api/leaderboard?apiKey=${RAW365_API_KEY}&start=${start.toISOString()}&end=${end.toISOString()}`;
+function getPeriodBounds(date) {
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const msPerPeriod = LEADERBOARD_PERIOD_DAYS * msPerDay;
+
+  // Calculate how many full 7-day periods have passed since anchor
+  const diff = date - ANCHOR_START;
+  const periodsPassed = Math.floor(diff / msPerPeriod);
+
+  // Current period start and end timestamps
+  const currentPeriodStart = new Date(ANCHOR_START.getTime() + periodsPassed * msPerPeriod);
+  const currentPeriodEnd = new Date(currentPeriodStart.getTime() + msPerPeriod);
+
+  // Previous period is the one before current
+  const prevPeriodEnd = currentPeriodStart;
+  const prevPeriodStart = new Date(prevPeriodEnd.getTime() - msPerPeriod);
+
+  return { prevPeriodStart, prevPeriodEnd, currentPeriodStart, currentPeriodEnd };
 }
 
-// === /api/leaderboard/raw365 ===
+// Dynamic /api/leaderboard/raw365
 app.get('/api/leaderboard/raw365', async (req, res) => {
   try {
-    const API_URL = getRaw365Url(RAW365_CURRENT_START, RAW365_CURRENT_END);
+    const now = new Date();
+    const { currentPeriodStart, currentPeriodEnd } = getPeriodBounds(now);
+    const API_URL = getRaw365Url(currentPeriodStart, currentPeriodEnd);
     const response = await fetch(API_URL);
     const data = await response.json();
+
     let leaderboard = data.results
       .filter(entry => entry.wager > 0)
-      .sort((a, b) => b.wager - a.wager)
-      .slice(0, 10)
-      .map(entry => ({
-        name: maskUsername(entry.username),
-        wager: entry.wager
-      }));
-    const prizes = [
-      250, 120, 65, 30, 15, 10, 5, 5, 0, 0
-    ].map((reward, i) => ({ position: i + 1, reward }));
+      .sort((a,b) => b.wager - a.wager)
+      .slice(0,10)
+      .map(entry => ({ name: maskUsername(entry.username), wager: entry.wager }));
+
+    const prizes = [250,120,65,30,15,10,5,5,0,0].map((reward,i) => ({ position: i+1, reward }));
+
     res.json({
       leaderboard,
       prizes,
-      startTime: RAW365_CURRENT_START.toISOString(),
-      endTime: RAW365_CURRENT_END.toISOString()
+      startTime: currentPeriodStart.toISOString(),
+      endTime: currentPeriodEnd.toISOString()
     });
-  } catch (error) {
+  } catch(error) {
     console.error('Error fetching leaderboard:', error);
-    res.status(500).json({ error: 'Failed to fetch leaderboard data' });
+    res.status(500).json({error: 'Failed to fetch leaderboard data'});
   }
 });
 
-// === /api/prev-leaderboard/raw365 ===
+// Dynamic /api/prev-leaderboard/raw365
 app.get('/api/prev-leaderboard/raw365', async (req, res) => {
   try {
-    const API_URL = getRaw365Url(RAW365_PREV_START, RAW365_PREV_END);
+    const now = new Date();
+    const { prevPeriodStart, prevPeriodEnd } = getPeriodBounds(now);
+    const API_URL = getRaw365Url(prevPeriodStart, prevPeriodEnd);
     const response = await fetch(API_URL);
     const data = await response.json();
+
     let leaderboard = data.results
       .filter(entry => entry.wager > 0)
-      .sort((a, b) => b.wager - a.wager)
-      .slice(0, 10)
-      .map(entry => ({
-        name: maskUsername(entry.username),
-        wager: entry.wager
-      }));
-    const prizes = [
-      250, 120, 65, 30, 15, 10, 5, 5, 0, 0
-    ].map((reward, i) => ({ position: i + 1, reward }));
+      .sort((a,b) => b.wager - a.wager)
+      .slice(0,10)
+      .map(entry => ({ name: maskUsername(entry.username), wager: entry.wager }));
+
+    const prizes = [250,120,65,30,15,10,5,5,0,0].map((reward,i) => ({ position: i+1, reward }));
+
     res.json({
       leaderboard,
       prizes,
-      startTime: RAW365_PREV_START.toISOString(),
-      endTime: RAW365_PREV_END.toISOString()
+      startTime: prevPeriodStart.toISOString(),
+      endTime: prevPeriodEnd.toISOString()
     });
-  } catch (error) {
+  } catch(error) {
     console.error('Error fetching previous leaderboard:', error);
-    res.status(500).json({ error: 'Failed to fetch previous leaderboard data' });
+    res.status(500).json({error: 'Failed to fetch previous leaderboard data'});
   }
 });
 
-// === /api/countdown/raw365 ===
+// Dynamic countdown
 app.get('/api/countdown/raw365', (req, res) => {
   const now = new Date();
-  const total = RAW365_CURRENT_END - RAW365_CURRENT_START;
-  const remaining = RAW365_CURRENT_END - now;
-  const percentageLeft = Math.max(0, Math.min(100, (remaining / total) * 100));
+  const { currentPeriodStart, currentPeriodEnd } = getPeriodBounds(now);
+
+  const total = currentPeriodEnd - currentPeriodStart;
+  const remaining = currentPeriodEnd - now;
+  let percentageLeft = Math.max(0, Math.min(100, (remaining / total) * 100));
+
   res.json({ percentageLeft: parseFloat(percentageLeft.toFixed(2)) });
 });
 
