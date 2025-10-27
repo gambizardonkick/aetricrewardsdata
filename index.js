@@ -53,7 +53,7 @@ app.get('/api/leaderboard/rainbet', async (req, res) => {
     leaderboard.sort((a, b) => b.wager - a.wager);
     leaderboard = leaderboard.slice(0, 10);
     const prizes = [
-      250, 120, 65, 30, 15, 10, 5, 5, 0, 0
+      75, 35, 20, 15, 10, 5, 5, 0, 0, 0
     ].map((reward, i) => ({ position: i + 1, reward }));
     res.json({
       leaderboard,
@@ -83,7 +83,7 @@ app.get('/api/prev-leaderboard/rainbet', async (req, res) => {
     leaderboard.sort((a, b) => b.wager - a.wager);
     leaderboard = leaderboard.slice(0, 10);
     const prizes = [
-      250, 120, 65, 30, 15, 10, 5, 5, 0, 0
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     ].map((reward, i) => ({ position: i + 1, reward }));
     res.json({
       leaderboard,
