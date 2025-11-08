@@ -39,7 +39,7 @@ function maskUsername(username) {
 const [START_TIME, END_TIME] = getCurrentMonthRangeUTC();
 const START_DATE = START_TIME.toISOString().split('T')[0];
 const END_DATE = END_TIME.toISOString().split('T')[0];
-const API_URL = `https://services.rainbet.com/v1/external/affiliates?start_at=${START_DATE}&end_at=${END_DATE}&key=95a8EtAJp7lS1hlZu3hXJUpc0o0efMg7`;
+const API_URL = `https://services.rainbet.com/v1/external/affiliates?start_at=${START_DATE}&end_at=${END_DATE}&key=t4IjvvBm6zWpOxXRpuYctyKRRUnhKzvL`;
 
 // === /api/leaderboard/rainbet ===
 app.get('/api/leaderboard/rainbet', async (req, res) => {
@@ -73,7 +73,7 @@ app.get('/api/prev-leaderboard/rainbet', async (req, res) => {
     const [PREV_START_TIME, PREV_END_TIME] = getPreviousMonthRangeUTC();
     const PREV_START_DATE = PREV_START_TIME.toISOString().split('T')[0];
     const PREV_END_DATE = PREV_END_TIME.toISOString().split('T')[0];
-    const PREV_API_URL = `https://services.rainbet.com/v1/external/affiliates?start_at=${PREV_START_DATE}&end_at=${PREV_END_DATE}&key=95a8EtAJp7lS1hlZu3hXJUpc0o0efMg7`;
+    const PREV_API_URL = `https://services.rainbet.com/v1/external/affiliates?start_at=${PREV_START_DATE}&end_at=${PREV_END_DATE}&key=t4IjvvBm6zWpOxXRpuYctyKRRUnhKzvL`;
     const response = await fetch(PREV_API_URL);
     const data = await response.json();
     let leaderboard = data.affiliates.map(entry => ({
